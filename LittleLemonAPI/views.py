@@ -15,9 +15,38 @@ class MenuItemsView(generics.ListCreateAPIView):
     serializer_class = MenuItemSerializer
 
     def post(self, request, *args, **kwargs):
+        # Only allow request from managers.
         if not is_manager(request):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
-
         return super().post(request, *args, **kwargs)
+
+
+class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MenuItem.objects.all()
+    serializer_class = MenuItemSerializer
+
+    def put(self, request, *args, **kwargs):
+        # Only allow request from managers.
+        if not is_manager(request):
+            return Response(
+                {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
+            )
+        return super().put(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        # Only allow request from managers.
+        if not is_manager(request):
+            return Response(
+                {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
+            )
+        return super().patch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        # Only allow request from managers.
+        if not is_manager(request):
+            return Response(
+                {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
+            )
+        return super().delete(request, *args, **kwargs)

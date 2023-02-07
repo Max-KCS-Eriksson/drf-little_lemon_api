@@ -25,6 +25,9 @@ class MenuItem(models.Model):
     featured = models.BooleanField(db_index=True)
     category = models.ForeignKey(Category, on_delete=models.PROTECT)
 
+    class Meta:
+        unique_together = ("title", "category")  # No duplicate items in same category.
+
 
 class Cart(models.Model):
     """Shopping cart of a user."""

@@ -1,9 +1,13 @@
-from rest_framework import generics
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.response import Response
 
 from .models import MenuItem
 from .serializers import MenuItemSerializer
+
+
+def is_manager(request):
+    """Checks if user making the request belongs to the manager role."""
+    return request.user.groups.filter(name="Manager").exists()
 
 
 class MenuItemsView(generics.ListCreateAPIView):
@@ -11,9 +15,9 @@ class MenuItemsView(generics.ListCreateAPIView):
     serializer_class = MenuItemSerializer
 
     def post(self, request, *args, **kwargs):
-        if request.user.groups.filter(name="Manager").exists():
-            return super().post(request, *args, **kwargs)
-        else:
+        if not is_manager(request):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
+
+        return super().post(request, *args, **kwargs)

@@ -43,13 +43,12 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
             )
         return super().patch(request, *args, **kwargs)
 
-    def delete(self, request, *args, **kwargs):
+    def delete(self, request):
         # Only allow request from managers.
         if not is_manager(request):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
-        # return super().delete(request, *args, **kwargs)
         menu_item = self.get_object()
         menu_item.delete()
         return Response(status=status.HTTP_200_OK)

@@ -49,4 +49,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
-        return super().delete(request, *args, **kwargs)
+        # return super().delete(request, *args, **kwargs)
+        menu_item = self.get_object()
+        menu_item.delete()
+        return Response(status=status.HTTP_200_OK)

@@ -14,9 +14,15 @@ def is_manager(request):
 
 
 def assign_user_to_group(user: User, group_name: str):
-    """Assign instance of a user to an group specified by name as a string."""
+    """Assign instance of a user to a group specified by name as a string."""
     manager_group = get_object_or_404(Group, name=group_name)
     manager_group.user_set.add(user)
+
+
+def remove_user_from_group(user: User, group_name: str):
+    """Remove instance of a user from a group specified by name as a string."""
+    manager_group = get_object_or_404(Group, name=group_name)
+    user.groups.remove(manager_group)
 
 
 class MenuItemsView(generics.ListCreateAPIView):
@@ -93,3 +99,19 @@ class ManagersView(generics.ListCreateAPIView):
         user = get_object_or_404(User, username=request.POST.get("username"))
         assign_user_to_group(user, "Manager")
         return Response(status=status.HTTP_201_CREATED)
+
+
+class RemoveManagerView(generics.DestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def delete(self, request, *args, **kwargs):
+        # Only allow request from managers.
+        if not is_manager(request):
+            return Response(
+                {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
+            )
+        # Get user or 404, and remove from group.
+        user = self.get_object()
+        remove_user_from_group(user, "Manager")
+        return Response(status=status.HTTP_200_OK)

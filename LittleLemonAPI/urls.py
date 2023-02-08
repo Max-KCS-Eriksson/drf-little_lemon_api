@@ -8,5 +8,6 @@ urlpatterns = [
     path("menu-items", views.MenuItemsView.as_view()),
     path("menu-items/<int:pk>", views.SingleMenuItemView.as_view()),
     # User role management endpoint.
-    path("groups/managers/users", views.ManagersView.as_view()),
+    path("groups/manager/users", views.ManagersView.as_view()),
+    path("groups/manager/users/<int:pk>", views.RemoveManagerView.as_view()),
 ]

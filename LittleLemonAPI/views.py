@@ -207,13 +207,13 @@ class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
 
 
 class OrdersView(generics.ListCreateAPIView):
-    serializer_class = OrderSerializer
+    serializer_class = OrderItemSerializer
 
     def get_queryset(self):
         # Return all orders if user is a manager, and user created orders only if not.
         if is_manager(self.request):
-            return Order.objects.all()
-        return Order.objects.filter(user=self.request.user)
+            return OrderItem.objects.all()
+        return OrderItem.objects.filter(order__user=self.request.user)
 
     def post(self, request, *args, **kwargs):
         # Get current user and all items in users cart.
@@ -244,3 +244,21 @@ class OrdersView(generics.ListCreateAPIView):
         OrderItem.objects.bulk_create(order_items)
         cart_items.delete()
         return Response(status=status.HTTP_201_CREATED)
+
+
+class SingleOrderView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = OrderItemSerializer
+    lookup_url_kwarg = "pk"
+
+    def get_queryset(self):
+        # Get items in order specified by primary key given as an URL parameter.
+        order = get_object_or_404(Order, pk=self.kwargs.get(self.lookup_url_kwarg))
+        return OrderItem.objects.filter(order=order)
+
+    def get(self, request, *args, **kwargs):
+        # Check that specified order belong to current user.
+        order = get_object_or_404(Order, pk=self.kwargs.get(self.lookup_url_kwarg))
+        if order.user != self.request.user:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        return super().get(request, *args, **kwargs)

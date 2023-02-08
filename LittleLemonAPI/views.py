@@ -247,18 +247,11 @@ class OrdersView(generics.ListCreateAPIView):
 
 
 class SingleOrderView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = OrderItemSerializer
-    lookup_url_kwarg = "pk"
-
-    def get_queryset(self):
-        # Get items in order specified by primary key given as an URL parameter.
-        order = get_object_or_404(Order, pk=self.kwargs.get(self.lookup_url_kwarg))
-        return OrderItem.objects.filter(order=order)
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
 
     def get(self, request, *args, **kwargs):
-        # Check that specified order belong to current user.
-        order = get_object_or_404(Order, pk=self.kwargs.get(self.lookup_url_kwarg))
-        if order.user != self.request.user:
+        # Show only if user is owner or a manager.
+        if self.request.user != self.get_object().user and not is_manager(request):
             return Response(status=status.HTTP_404_NOT_FOUND)
-
         return super().get(request, *args, **kwargs)

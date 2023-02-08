@@ -58,7 +58,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
             )
         return super().patch(request, *args, **kwargs)
 
-    def delete(self, request):
+    def delete(self, request, *args, **kwargs):
         # Only allow request from managers.
         if not is_manager(request):
             return Response(

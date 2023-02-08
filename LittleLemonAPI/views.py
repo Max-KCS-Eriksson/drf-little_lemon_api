@@ -1,6 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django.contrib.auth.models import User, Group
+from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 
 from .models import MenuItem
@@ -83,10 +84,7 @@ class ManagersView(generics.ListCreateAPIView):
             )
 
         # Get user or 404.
-        try:
-            user = User.objects.get(username=request.POST.get("username"))
-        except ObjectDoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        user = get_object_or_404(User, username=request.POST.get("username"))
 
         # Assign user to group.
         manager_group = Group.objects.get(name="Manager")

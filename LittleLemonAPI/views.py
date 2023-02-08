@@ -115,3 +115,51 @@ class RemoveManagerView(generics.DestroyAPIView):
         user = self.get_object()
         remove_user_from_group(user, "Manager")
         return Response(status=status.HTTP_200_OK)
+
+
+class DeliveryCrewView(generics.ListCreateAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        if self.request.method == "GET":
+            # Manager only for GET requests.
+            return User.objects.filter(groups__name="Delivery crew")
+        else:
+            # All users for POST requests to allow assignment as Manager.
+            return User.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        # Only allow request from managers.
+        if not is_manager(request):
+            return Response(
+                {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
+            )
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request):
+        # Only allow request from managers.
+        if not is_manager(request):
+            return Response(
+                {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
+            )
+
+        # Get user or 404, and assign to group.
+        user = get_object_or_404(User, username=request.POST.get("username"))
+        assign_user_to_group(user, "Delivery crew")
+        return Response(status=status.HTTP_201_CREATED)
+
+
+class RemoveDeliveryCrewView(generics.DestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def delete(self, request, *args, **kwargs):
+        # Only allow request from managers.
+        if not is_manager(request):
+            return Response(
+                {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
+            )
+        # Get user or 404, and remove from group.
+        user = self.get_object()
+        remove_user_from_group(user, "Delivery crew")
+        return Response(status=status.HTTP_200_OK)

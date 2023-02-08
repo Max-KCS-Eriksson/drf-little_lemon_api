@@ -10,4 +10,6 @@ urlpatterns = [
     # User role management endpoint.
     path("groups/manager/users", views.ManagersView.as_view()),
     path("groups/manager/users/<int:pk>", views.RemoveManagerView.as_view()),
+    path("groups/delivery-crew/users", views.DeliveryCrewView.as_view()),
+    path("groups/delivery-crew/users/<int:pk>", views.RemoveDeliveryCrewView.as_view()),
 ]

@@ -69,6 +69,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    order = OrderSerializer()
     order_id = serializers.IntegerField()
     menuitem_id = serializers.IntegerField()
     total_price = serializers.SerializerMethodField(method_name="get_total_price")
@@ -85,7 +86,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "unit_price",
             "total_price",
         ]
-        depth = 1
 
     def get_total_price(self, order_item: OrderItem):
         return order_item.price * order_item.quantity

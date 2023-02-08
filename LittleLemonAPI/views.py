@@ -13,6 +13,12 @@ def is_manager(request):
     return request.user.groups.filter(name="Manager").exists()
 
 
+def assign_user_to_group(user: User, group_name: str):
+    """Assign instance of a user to an group specified by name as a string."""
+    manager_group = get_object_or_404(Group, name=group_name)
+    manager_group.user_set.add(user)
+
+
 class MenuItemsView(generics.ListCreateAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
@@ -76,18 +82,14 @@ class ManagersView(generics.ListCreateAPIView):
             )
         return super().get(request, *args, **kwargs)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         # Only allow request from managers.
         if not is_manager(request):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
 
-        # Get user or 404.
+        # Get user or 404, and assign to group.
         user = get_object_or_404(User, username=request.POST.get("username"))
-
-        # Assign user to group.
-        manager_group = Group.objects.get(name="Manager")
-        manager_group.user_set.add(user)
+        assign_user_to_group(user, "Manager")
         return Response(status=status.HTTP_201_CREATED)
-        # return super().post(request, *args, **kwargs)

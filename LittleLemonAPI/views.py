@@ -204,3 +204,43 @@ class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
         carts = Cart.objects.filter(user=user)
         carts.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+class OrdersView(generics.ListCreateAPIView):
+    serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        # Return all orders if user is a manager, and user created orders only if not.
+        if is_manager(self.request):
+            return Order.objects.all()
+        return Order.objects.filter(user=self.request.user)
+
+    def post(self, request, *args, **kwargs):
+        # Get current user and all items in users cart.
+        user = self.request.user
+        cart_items = Cart.objects.filter(user=user)
+
+        # Create new order and transfer items from cart.
+        order_total = 0
+        for cart_item in cart_items:
+            order_total += cart_item.quantity * cart_item.unit_price
+        new_order = Order(
+            user=user,
+            total=order_total,
+        )
+        # Write order and all order items to db, and delete cart items in one hit.
+        order_items = []
+        for cart_item in cart_items:
+            order_items.append(
+                OrderItem(
+                    order=new_order,
+                    menuitem=cart_item.menuitem,
+                    quantity=cart_item.quantity,
+                    unit_price=cart_item.unit_price,
+                    price=cart_item.quantity * cart_item.unit_price,
+                )
+            )
+        new_order.save()
+        OrderItem.objects.bulk_create(order_items)
+        cart_items.delete()
+        return Response(status=status.HTTP_201_CREATED)

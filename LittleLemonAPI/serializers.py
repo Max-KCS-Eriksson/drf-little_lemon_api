@@ -86,6 +86,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "unit_price",
             "total_price",
         ]
+        depth = 2
 
     def get_total_price(self, order_item: OrderItem):
         return order_item.price * order_item.quantity

@@ -26,8 +26,9 @@ class MenuItemSerializer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
     user_id = serializers.IntegerField()
-    menuitem_if = serializers.IntegerField()
+    menuitem_id = serializers.IntegerField()
     total_price = serializers.SerializerMethodField(method_name="get_total_price")
 
     class Meta:
@@ -45,7 +46,7 @@ class CartSerializer(serializers.ModelSerializer):
         depth = 1
 
     def get_total_price(self, cart_item: Cart):
-        return cart_item.price * cart_item.quantity
+        return cart_item.unit_price * cart_item.quantity
 
 
 class OrderSerializer(serializers.ModelSerializer):

@@ -4,8 +4,8 @@ from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 
-from .models import MenuItem
-from .serializers import MenuItemSerializer, UserSerializer
+from .models import MenuItem, Cart
+from .serializers import MenuItemSerializer, UserSerializer, CartSerializer
 
 
 def is_manager(request):
@@ -162,4 +162,42 @@ class RemoveDeliveryCrewView(generics.DestroyAPIView):
         # Get user or 404, and remove from group.
         user = self.get_object()
         remove_user_from_group(user, "Delivery crew")
+        return Response(status=status.HTTP_200_OK)
+
+
+class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
+    serializer_class = CartSerializer
+
+    def get_queryset(self):
+        # Get all cart of current user.
+        user = self.request.user
+        if self.request == "POST" or self.request == "DELETE":
+            return Cart.objects.filter(user=user)
+        else:
+            return Cart.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        # Get current user, menuitem by title, and other POST request data.
+        user = self.request.user
+        request_data = self.request.POST
+        menuitem = get_object_or_404(MenuItem, title=request_data.get("menuitem"))
+        quantity = int(request_data.get("quantity"))
+        unit_price = menuitem.price
+
+        # Create cart and write to db.
+        cart = Cart(
+            user=user,
+            menuitem=menuitem,
+            quantity=quantity,
+            unit_price=unit_price,
+            # price=quantity * unit_price,
+        )
+        cart.save()
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request, *args, **kwargs):
+        # Delete all carts made by the current user.
+        user = self.request.user
+        carts = Cart.objects.filter(user=user)
+        carts.delete()
         return Response(status=status.HTTP_200_OK)

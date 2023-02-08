@@ -50,6 +50,7 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
     user_id = serializers.IntegerField()
     delivery_crew_id = serializers.IntegerField()
 

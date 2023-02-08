@@ -4,8 +4,14 @@ from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 
-from .models import MenuItem, Cart
-from .serializers import MenuItemSerializer, UserSerializer, CartSerializer
+from .models import MenuItem, Cart, Order, OrderItem
+from .serializers import (
+    MenuItemSerializer,
+    UserSerializer,
+    CartSerializer,
+    OrderSerializer,
+    OrderItemSerializer,
+)
 
 
 def is_manager(request):
@@ -169,12 +175,8 @@ class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
     serializer_class = CartSerializer
 
     def get_queryset(self):
-        # Get all cart of current user.
         user = self.request.user
-        if self.request == "POST" or self.request == "DELETE":
-            return Cart.objects.filter(user=user)
-        else:
-            return Cart.objects.all()
+        return Cart.objects.filter(user=user)
 
     def post(self, request, *args, **kwargs):
         # Get current user, menuitem by title, and other POST request data.
@@ -190,6 +192,7 @@ class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
             menuitem=menuitem,
             quantity=quantity,
             unit_price=unit_price,
+            # Price is calculated by the serializer.
             # price=quantity * unit_price,
         )
         cart.save()

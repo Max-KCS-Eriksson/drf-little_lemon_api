@@ -26,8 +26,8 @@ class MenuItemSerializer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
     user_id = serializers.IntegerField()
+    user = UserSerializer()
     menuitem_id = serializers.IntegerField()
     total_price = serializers.SerializerMethodField(method_name="get_total_price")
 
@@ -35,10 +35,10 @@ class CartSerializer(serializers.ModelSerializer):
         model = Cart
         fields = [
             "id",
-            "user",
             "user_id",
-            "menuitem",
+            "user",
             "menuitem_id",
+            "menuitem",
             "quantity",
             "unit_price",
             "total_price",
@@ -50,18 +50,19 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
     user_id = serializers.IntegerField()
+    user = UserSerializer()
     delivery_crew_id = serializers.IntegerField()
+    delivery_crew = UserSerializer()
 
     class Meta:
         model = Order
         fields = [
             "id",
-            "user",
             "user_id",
-            "delivery_crew",
+            "user",
             "delivery_crew_id",
+            "delivery_crew",
             "status",
             "total",
             "date",
@@ -69,24 +70,24 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    order = OrderSerializer()
     order_id = serializers.IntegerField()
     menuitem_id = serializers.IntegerField()
+    menuitem = MenuItemSerializer()
     total_price = serializers.SerializerMethodField(method_name="get_total_price")
 
     class Meta:
         model = OrderItem
         fields = [
             "id",
-            "order",
             "order_id",
-            "menuitem",
+            "order",
             "menuitem_id",
+            "menuitem",
             "quantity",
             "unit_price",
             "total_price",
         ]
-        depth = 2
+        depth = 1
 
     def get_total_price(self, order_item: OrderItem):
-        return order_item.price * order_item.quantity
+        return order_item.unit_price * order_item.quantity

@@ -321,19 +321,37 @@ class SingleOrderView(
         post_data_total = self.request.POST.get("total")
         post_data_date = self.request.POST.get("date")
 
+        # Check if request comes from a manager or delivery crew.
         if is_manager(self.request.user):
-            # MANAGERS can update everything
-            return Response(
-                {"message": "Manager access NOT implemented"},
-                status=status.HTTP_501_NOT_IMPLEMENTED,
-            )
+            # Managers can update everything.
+            order = self.get_queryset()
             # Ensure order has a delivery crew assigned before changing status to True.
-            if order.delivery_crew is None and post_data_status == 1:
+            if order.delivery_crew is None and post_data_status == "1":
                 # Can't set order as delivered without a delivery crew assigned.
+                message = "Invalid status assignment due to no delivery crew"
                 return Response(
-                    {"message": "Invalid status assignment"},
+                    {"message": message},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+
+            # Assign value if given in request data.
+            if post_data_user:
+                updated_user = get_object_or_404(User, username=post_data_user)
+                order.user = updated_user
+            if post_data_delivery_crew:
+                delivery_crew = get_object_or_404(
+                    User, username=post_data_delivery_crew
+                )
+                order.delivery_crew = delivery_crew
+            if post_data_status:
+                order.status = post_data_status
+            if post_data_total:
+                order.total = post_data_total
+            if post_data_date:
+                order.date = post_data_date
+            order.save()
+            return Response(status=status.HTTP_200_OK)
+
         elif is_delivery_crew(self.request.user):
             order = self.get_queryset()
             # Ensure a request comes from assigned delivery crew.

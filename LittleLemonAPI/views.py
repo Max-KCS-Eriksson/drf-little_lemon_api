@@ -19,6 +19,11 @@ def is_manager(request):
     return request.user.groups.filter(name="Manager").exists()
 
 
+def is_delivery_crew(request):
+    """Checks if user making the request belongs to the delivery crew role."""
+    return request.user.groups.filter(name="Delivery crew").exists()
+
+
 def assign_user_to_group(user: User, group_name: str):
     """Assign instance of a user to a group specified by name as a string."""
     manager_group = get_object_or_404(Group, name=group_name)
@@ -246,14 +251,50 @@ class OrdersView(generics.ListCreateAPIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
-class SingleOrderView(generics.ListAPIView):
+class SingleOrderView(
+    generics.ListAPIView, generics.UpdateAPIView, generics.DestroyAPIView
+):
     serializer_class = OrderItemSerializer
 
     def get_queryset(self):
-        # Ensure specified order exists, and user is owner of order or a manager.
-        order = get_object_or_404(Order, pk=self.kwargs.get("pk"))
-        if self.request.user != order.user and not is_manager(self.request):
-            raise Http404
+        # Query OrderItems of Order on GET requests.
+        if self.request.method == "GET":
+            # Ensure specified order exists.
+            order = get_object_or_404(Order, pk=self.kwargs.get("pk"))
+            # Ensure user is owner or a manager or in the delivery crew.
+            if (
+                self.request.user != order.user
+                and not is_manager(self.request)
+                and not is_delivery_crew(self.request)
+            ):
+                raise Http404
 
-        # List all items of specified order.
-        return OrderItem.objects.filter(order=order)
+            # List all items of specified order.
+            return OrderItem.objects.filter(order=order)
+
+        # Query Order on PUT, PATCH, and DELETE.
+        elif self.request.method in ["PUT", "PATCH", "DELETE"]:
+            # Ensure user is a manager or in the delivery crew, and return Order.
+            if not is_manager(self.request) or not is_delivery_crew(self.request):
+                return get_object_or_404(Order, pk=self.kwargs.get("pk"))
+
+    def put(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+        # Allow only manager to completely update an order.
+        if not is_manager(self.request):
+            context = {"message": "You lack permission for this action"}
+            return Response(context, status=status.HTTP_401_UNAUTHORIZED)
+        return super().put(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
+        return super().patch(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        # Allow only manager to delete an order.
+        if not is_manager(self.request):
+            context = {"message": "You lack permission for this action"}
+            return Response(context, status=status.HTTP_401_UNAUTHORIZED)
+        order = self.get_queryset()
+        order.delete()
+        return Response(status=status.HTTP_200_OK)

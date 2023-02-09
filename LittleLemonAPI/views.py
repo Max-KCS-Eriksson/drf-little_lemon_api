@@ -314,8 +314,56 @@ class SingleOrderView(
         return Response(status=status.HTTP_200_OK)
 
     def patch(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
-        return super().patch(request, *args, **kwargs)
+        # Get submitted data.
+        post_data_user = self.request.POST.get("user")
+        post_data_delivery_crew = self.request.POST.get("delivery_crew")
+        post_data_status = self.request.POST.get("status")
+        post_data_total = self.request.POST.get("total")
+        post_data_date = self.request.POST.get("date")
+
+        if is_manager(self.request.user):
+            # MANAGERS can update everything
+            return Response(
+                {"message": "Manager access NOT implemented"},
+                status=status.HTTP_501_NOT_IMPLEMENTED,
+            )
+            # Ensure order has a delivery crew assigned before changing status to True.
+            if order.delivery_crew is None and post_data_status == 1:
+                # Can't set order as delivered without a delivery crew assigned.
+                return Response(
+                    {"message": "Invalid status assignment"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        elif is_delivery_crew(self.request.user):
+            order = self.get_queryset()
+            # Ensure a request comes from assigned delivery crew.
+            if self.request.user != order.delivery_crew:
+                return Response(
+                    {"message": "Not assigned to this order"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            # Delivery crew can ONLY update status field.
+            if (
+                post_data_user
+                or post_data_delivery_crew
+                or post_data_total
+                or post_data_date
+            ):
+                return Response(
+                    {"message": "Delivery crew can only update status"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            if post_data_status:
+                # Update status of specified order and write to db.
+                order.status = post_data_status
+                order.save()
+                return Response(status=status.HTTP_200_OK)
+            return Response(
+                {"message": "No update to status was given"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, *args, **kwargs):
         # Allow only manager to delete an order.

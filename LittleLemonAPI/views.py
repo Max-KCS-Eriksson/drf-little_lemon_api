@@ -2,7 +2,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
+from django.http import Http404
 
 from .models import MenuItem, Cart, Order, OrderItem
 from .serializers import (
@@ -246,12 +246,14 @@ class OrdersView(generics.ListCreateAPIView):
         return Response(status=status.HTTP_201_CREATED)
 
 
-class SingleOrderView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Order.objects.all()
-    serializer_class = OrderSerializer
+class SingleOrderView(generics.ListAPIView):
+    serializer_class = OrderItemSerializer
 
-    def get(self, request, *args, **kwargs):
-        # Show only if user is owner or a manager.
-        if self.request.user != self.get_object().user and not is_manager(request):
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        return super().get(request, *args, **kwargs)
+    def get_queryset(self):
+        # Ensure specified order exists, and user is owner of order or a manager.
+        order = get_object_or_404(Order, pk=self.kwargs.get("pk"))
+        if self.request.user != order.user and not is_manager(self.request):
+            raise Http404
+
+        # List all items of specified order.
+        return OrderItem.objects.filter(order=order)

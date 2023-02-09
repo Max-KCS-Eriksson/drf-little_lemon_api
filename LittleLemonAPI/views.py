@@ -14,14 +14,14 @@ from .serializers import (
 )
 
 
-def is_manager(request):
+def is_manager(user):
     """Checks if user making the request belongs to the manager role."""
-    return request.user.groups.filter(name="Manager").exists()
+    return user.groups.filter(name="Manager").exists()
 
 
-def is_delivery_crew(request):
+def is_delivery_crew(user):
     """Checks if user making the request belongs to the delivery crew role."""
-    return request.user.groups.filter(name="Delivery crew").exists()
+    return user.groups.filter(name="Delivery crew").exists()
 
 
 def assign_user_to_group(user: User, group_name: str):
@@ -42,7 +42,7 @@ class MenuItemsView(generics.ListCreateAPIView):
 
     def post(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -55,7 +55,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
 
     def put(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -63,7 +63,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
 
     def patch(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -71,7 +71,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -93,7 +93,7 @@ class ManagersView(generics.ListCreateAPIView):
 
     def get(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -101,7 +101,7 @@ class ManagersView(generics.ListCreateAPIView):
 
     def post(self, request):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -118,7 +118,7 @@ class RemoveManagerView(generics.DestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -141,7 +141,7 @@ class DeliveryCrewView(generics.ListCreateAPIView):
 
     def get(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -149,7 +149,7 @@ class DeliveryCrewView(generics.ListCreateAPIView):
 
     def post(self, request):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -166,7 +166,7 @@ class RemoveDeliveryCrewView(generics.DestroyAPIView):
 
     def delete(self, request, *args, **kwargs):
         # Only allow request from managers.
-        if not is_manager(request):
+        if not is_manager(self.request.user):
             return Response(
                 {"message": "You are not authorized"}, status.HTTP_403_FORBIDDEN
             )
@@ -216,7 +216,7 @@ class OrdersView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         # Return all orders if user is a manager, and user created orders only if not.
-        if is_manager(self.request):
+        if is_manager(self.request.user):
             return OrderItem.objects.all()
         return OrderItem.objects.filter(order__user=self.request.user)
 
@@ -264,8 +264,8 @@ class SingleOrderView(
             # Ensure user is owner or a manager or in the delivery crew.
             if (
                 self.request.user != order.user
-                and not is_manager(self.request)
-                and not is_delivery_crew(self.request)
+                and not is_manager(self.request.user)
+                and not is_delivery_crew(self.request.user)
             ):
                 raise Http404
 
@@ -275,16 +275,43 @@ class SingleOrderView(
         # Query Order on PUT, PATCH, and DELETE.
         elif self.request.method in ["PUT", "PATCH", "DELETE"]:
             # Ensure user is a manager or in the delivery crew, and return Order.
-            if not is_manager(self.request) or not is_delivery_crew(self.request):
+            if not is_manager(self.request.user) or not is_delivery_crew(
+                self.request.user
+            ):
                 return get_object_or_404(Order, pk=self.kwargs.get("pk"))
 
     def put(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
         # Allow only manager to completely update an order.
-        if not is_manager(self.request):
+        if not is_manager(self.request.user):
             context = {"message": "You lack permission for this action"}
             return Response(context, status=status.HTTP_401_UNAUTHORIZED)
-        return super().put(request, *args, **kwargs)
+
+        # Get submitted data.
+        post_data_user = self.request.POST.get("user")
+        post_data_delivery_crew = self.request.POST.get("delivery_crew")
+        post_data_status = self.request.POST.get("status")
+        post_data_total = self.request.POST.get("total")
+        post_data_date = self.request.POST.get("date")
+
+        # Get specified user and delivery crew.
+        updated_user = get_object_or_404(User, username=post_data_user)
+        delivery_crew = get_object_or_404(User, username=post_data_delivery_crew)
+        # Ensure delivery crew has correct role.
+        if not is_delivery_crew(delivery_crew):
+            return Response(
+                {"message": "Invalid delivery crew assignment"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Update specified order and write to db.
+        order = self.get_queryset()
+        order.user = updated_user
+        order.delivery_crew = delivery_crew
+        order.status = post_data_status
+        order.total = post_data_total
+        order.date = post_data_date
+        order.save()
+        return Response(status=status.HTTP_200_OK)
 
     def patch(self, request, *args, **kwargs):
         return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
@@ -292,7 +319,7 @@ class SingleOrderView(
 
     def delete(self, request, *args, **kwargs):
         # Allow only manager to delete an order.
-        if not is_manager(self.request):
+        if not is_manager(self.request.user):
             context = {"message": "You lack permission for this action"}
             return Response(context, status=status.HTTP_401_UNAUTHORIZED)
         order = self.get_queryset()

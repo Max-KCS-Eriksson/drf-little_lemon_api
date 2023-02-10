@@ -1,6 +1,7 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -10,7 +11,6 @@ from .serializers import (
     MenuItemSerializer,
     UserSerializer,
     CartSerializer,
-    OrderSerializer,
     OrderItemSerializer,
 )
 
@@ -43,6 +43,7 @@ class MenuItemsView(generics.ListCreateAPIView):
     permission_classes = [AllowAny]
     ordering_fields = ["category__title", "title", "price", "featured"]
     search_fields = ["category__title", "title"]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     def post(self, request, *args, **kwargs):
         # Only allow request from managers.
@@ -57,6 +58,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     def put(self, request, *args, **kwargs):
         # Only allow request from managers.
@@ -188,6 +190,7 @@ class RemoveDeliveryCrewView(generics.DestroyAPIView):
 class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def get_queryset(self):
         user = self.request.user
@@ -230,6 +233,7 @@ class OrdersView(generics.ListCreateAPIView):
         "menuitem__title",
         "order__user__username",
     ]
+    throttle_classes = [UserRateThrottle]
 
     def get_queryset(self):
         # Return all orders if user is a manager, and user created orders only if not.
@@ -273,6 +277,7 @@ class SingleOrderView(
 ):
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
 
     def get_queryset(self):
         # Query OrderItems of Order on GET requests.

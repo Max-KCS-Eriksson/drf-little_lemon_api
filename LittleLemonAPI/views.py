@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -82,6 +83,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
 
 class ManagersView(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         if self.request.method == "GET":
@@ -115,6 +117,7 @@ class ManagersView(generics.ListCreateAPIView):
 class RemoveManagerView(generics.DestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, *args, **kwargs):
         # Only allow request from managers.
@@ -130,6 +133,7 @@ class RemoveManagerView(generics.DestroyAPIView):
 
 class DeliveryCrewView(generics.ListCreateAPIView):
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         if self.request.method == "GET":
@@ -163,6 +167,7 @@ class DeliveryCrewView(generics.ListCreateAPIView):
 class RemoveDeliveryCrewView(generics.DestroyAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, *args, **kwargs):
         # Only allow request from managers.
@@ -178,6 +183,7 @@ class RemoveDeliveryCrewView(generics.DestroyAPIView):
 
 class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
     serializer_class = CartSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -213,6 +219,7 @@ class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
 
 class OrdersView(generics.ListCreateAPIView):
     serializer_class = OrderItemSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Return all orders if user is a manager, and user created orders only if not.
@@ -255,6 +262,7 @@ class SingleOrderView(
     generics.ListAPIView, generics.UpdateAPIView, generics.DestroyAPIView
 ):
     serializer_class = OrderItemSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Query OrderItems of Order on GET requests.

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "djoser",
+    "django_filters",
     # Project apps
     "LittleLemonAPI",
 ]
@@ -144,6 +145,7 @@ REST_FRAMEWORK = {
     ],
     # Sorting, Searching, and Pagination
     "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.OrderingFilter",
         "rest_framework.filters.SearchFilter",
     ],

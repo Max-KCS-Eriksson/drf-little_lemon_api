@@ -44,6 +44,7 @@ class MenuItemsView(generics.ListCreateAPIView):
     ordering_fields = ["category__title", "title", "price", "featured"]
     search_fields = ["category__title", "title"]
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
+    filterset_fields = ["category", "featured"]
 
     def post(self, request, *args, **kwargs):
         # Only allow request from managers.
@@ -234,6 +235,12 @@ class OrdersView(generics.ListCreateAPIView):
         "order__user__username",
     ]
     throttle_classes = [UserRateThrottle]
+    filterset_fields = [
+        "order__delivery_crew",
+        "order__status",
+        "order__date",
+        "order__user",
+    ]
 
     def get_queryset(self):
         # Return all orders if user is a manager, and user created orders only if not.

@@ -85,7 +85,7 @@ class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
             )
         menu_item = self.get_object()
         menu_item.delete()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"message": "Item deleted"}, status=status.HTTP_200_OK)
 
 
 class ManagersView(generics.ListCreateAPIView):
@@ -118,7 +118,9 @@ class ManagersView(generics.ListCreateAPIView):
         # Get user or 404, and assign to group.
         user = get_object_or_404(User, username=request.POST.get("username"))
         assign_user_to_group(user, "Manager")
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "User added to manager group"}, status=status.HTTP_200_OK
+        )
 
 
 class RemoveManagerView(generics.DestroyAPIView):
@@ -135,7 +137,9 @@ class RemoveManagerView(generics.DestroyAPIView):
         # Get user or 404, and remove from group.
         user = self.get_object()
         remove_user_from_group(user, "Manager")
-        return Response(status=status.HTTP_200_OK)
+        return Response(
+            {"message": "User removed from manager group"}, status=status.HTTP_200_OK
+        )
 
 
 class DeliveryCrewView(generics.ListCreateAPIView):
@@ -168,7 +172,9 @@ class DeliveryCrewView(generics.ListCreateAPIView):
         # Get user or 404, and assign to group.
         user = get_object_or_404(User, username=request.POST.get("username"))
         assign_user_to_group(user, "Delivery crew")
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "User added to the delivery crew"}, status=status.HTTP_200_OK
+        )
 
 
 class RemoveDeliveryCrewView(generics.DestroyAPIView):
@@ -185,7 +191,10 @@ class RemoveDeliveryCrewView(generics.DestroyAPIView):
         # Get user or 404, and remove from group.
         user = self.get_object()
         remove_user_from_group(user, "Delivery crew")
-        return Response(status=status.HTTP_200_OK)
+        return Response(
+            {"message": "User removed from the delivery crew"},
+            status=status.HTTP_200_OK,
+        )
 
 
 class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
@@ -215,14 +224,16 @@ class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
             # price=quantity * unit_price,
         )
         cart.save()
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "Item added to cart"}, status=status.HTTP_201_CREATED
+        )
 
     def delete(self, request, *args, **kwargs):
         # Delete all carts made by the current user.
         user = self.request.user
         carts = Cart.objects.filter(user=user)
         carts.delete()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"message": "Cart now empty"}, status=status.HTTP_200_OK)
 
 
 class OrdersView(generics.ListCreateAPIView):
@@ -276,7 +287,10 @@ class OrdersView(generics.ListCreateAPIView):
         new_order.save()
         OrderItem.objects.bulk_create(order_items)
         cart_items.delete()
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "Order created and cart is empty"},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class SingleOrderView(
@@ -313,8 +327,10 @@ class SingleOrderView(
     def put(self, request, *args, **kwargs):
         # Allow only manager to completely update an order.
         if not is_manager(self.request.user):
-            context = {"message": "You lack permission for this action"}
-            return Response(context, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"message": "You lack permission for this action"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         # Get submitted data.
         post_data_user = self.request.POST.get("user")
@@ -341,7 +357,7 @@ class SingleOrderView(
         order.total = post_data_total
         order.date = post_data_date
         order.save()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"message": "Order updated"}, status=status.HTTP_200_OK)
 
     def patch(self, request, *args, **kwargs):
         # Get submitted data.
@@ -358,9 +374,8 @@ class SingleOrderView(
             # Ensure order has a delivery crew assigned before changing status to True.
             if order.delivery_crew is None and post_data_status == "1":
                 # Can't set order as delivered without a delivery crew assigned.
-                message = "Invalid status assignment due to no delivery crew"
                 return Response(
-                    {"message": message},
+                    {"message": "Invalid status assignment due to no delivery crew"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -380,7 +395,7 @@ class SingleOrderView(
             if post_data_date:
                 order.date = post_data_date
             order.save()
-            return Response(status=status.HTTP_200_OK)
+            return Response({"message": "Order updated"}, status=status.HTTP_200_OK)
 
         elif is_delivery_crew(self.request.user):
             order = self.get_queryset()
@@ -405,7 +420,9 @@ class SingleOrderView(
                 # Update status of specified order and write to db.
                 order.status = post_data_status
                 order.save()
-                return Response(status=status.HTTP_200_OK)
+                return Response(
+                    {"message": "Order status updated"}, status=status.HTTP_200_OK
+                )
             return Response(
                 {"message": "No update to status was given"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -416,8 +433,10 @@ class SingleOrderView(
     def delete(self, request, *args, **kwargs):
         # Allow only manager to delete an order.
         if not is_manager(self.request.user):
-            context = {"message": "You lack permission for this action"}
-            return Response(context, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"message": "You lack permission for this action"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
         order = self.get_queryset()
         order.delete()
-        return Response(status=status.HTTP_200_OK)
+        return Response({"message": "Order deleted"}, status=status.HTTP_200_OK)

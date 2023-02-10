@@ -1,6 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from django.http import Http404
@@ -40,6 +40,7 @@ def remove_user_from_group(user: User, group_name: str):
 class MenuItemsView(generics.ListCreateAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
+    permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         # Only allow request from managers.
@@ -53,6 +54,7 @@ class MenuItemsView(generics.ListCreateAPIView):
 class SingleMenuItemView(generics.RetrieveUpdateDestroyAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
+    permission_classes = [AllowAny]
 
     def put(self, request, *args, **kwargs):
         # Only allow request from managers.

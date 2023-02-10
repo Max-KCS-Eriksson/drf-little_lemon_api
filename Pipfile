@@ -9,6 +9,7 @@ black = "*"
 djangorestframework = "*"
 djoser = "*"
 bleach = "*"
+djangorestframework-xml = "*"
 
 [dev-packages]
 

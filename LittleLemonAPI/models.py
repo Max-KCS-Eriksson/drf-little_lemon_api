@@ -12,6 +12,12 @@ class Category(models.Model):
     slug = models.SlugField()
     title = models.CharField(max_length=225, db_index=True)
 
+    class Meta:
+        verbose_name_plural = "categories"
+
+    def __str__(self) -> str:
+        return f"({self.pk}) {self.title}"
+
 
 class MenuItem(models.Model):
     """
@@ -28,6 +34,9 @@ class MenuItem(models.Model):
     class Meta:
         unique_together = ("title", "category")  # No duplicate items in same category.
 
+    def __str__(self) -> str:
+        return f"({self.category.pk}) {self.category.title}: ({self.pk}) {self.title}"
+
 
 class Cart(models.Model):
     """Shopping cart of a user."""
@@ -41,6 +50,9 @@ class Cart(models.Model):
 
     class Meta:
         unique_together = ("menuitem", "user")  # One entry per menuitem in a cart.
+
+    def __str__(self) -> str:
+        return f"({self.user.pk}) {self.user.username}: ({self.pk}) Cart"
 
 
 class Order(models.Model):
@@ -61,6 +73,9 @@ class Order(models.Model):
     total = models.DecimalField(max_digits=6, decimal_places=2)
     date = models.DateField(db_index=True, auto_now_add=True)
 
+    def __str__(self) -> str:
+        return f"({self.user.pk}) {self.user.username}: ({self.pk}) Order"
+
 
 class OrderItem(models.Model):
     """An item in an order."""
@@ -73,3 +88,6 @@ class OrderItem(models.Model):
 
     class Meta:
         unique_together = ("order", "menuitem")  # One entry per menuitem in an order.
+
+    def __str__(self) -> str:
+        return f"({self.order.user.pk}) {self.order.user.username}: ({self.order.pk}) Order: ({self.menuitem.pk}) {self.menuitem.title}"

@@ -41,7 +41,8 @@ class MenuItemsView(generics.ListCreateAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
     permission_classes = [AllowAny]
-    ordering_fields = ["title", "price", "featured", "category__title"]
+    ordering_fields = ["category__title", "title", "price", "featured"]
+    search_fields = ["category__title", "title"]
 
     def post(self, request, *args, **kwargs):
         # Only allow request from managers.
@@ -224,6 +225,11 @@ class OrdersView(generics.ListCreateAPIView):
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated]
     ordering_fields = ["order__delivery_crew", "order__status", "order__date"]
+    search_fields = [
+        "menuitem__category__title",
+        "menuitem__title",
+        "order__user__username",
+    ]
 
     def get_queryset(self):
         # Return all orders if user is a manager, and user created orders only if not.

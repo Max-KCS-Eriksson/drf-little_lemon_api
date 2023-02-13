@@ -6,8 +6,9 @@ from django.contrib.auth.models import User, Group
 from django.shortcuts import get_object_or_404
 from django.http import Http404
 
-from .models import MenuItem, Cart, Order, OrderItem
+from .models import Category, MenuItem, Cart, Order, OrderItem
 from .serializers import (
+    CategorySerializer,
     MenuItemSerializer,
     UserSerializer,
     CartSerializer,
@@ -15,12 +16,19 @@ from .serializers import (
 )
 
 
-def is_manager(user):
-    """Checks if user making the request belongs to the manager role."""
-    return user.groups.filter(name="Manager").exists()
+def is_manager(user: User):
+    """
+    Checks if user making the request belongs to the manager role.
+
+    Also return True if user is a superuser.
+    """
+    if user.groups.filter(name="Manager").exists() or user.is_superuser:
+        return True
+    else:
+        return False
 
 
-def is_delivery_crew(user):
+def is_delivery_crew(user: User):
     """Checks if user making the request belongs to the delivery crew role."""
     return user.groups.filter(name="Delivery crew").exists()
 
@@ -35,6 +43,21 @@ def remove_user_from_group(user: User, group_name: str):
     """Remove instance of a user from a group specified by name as a string."""
     manager_group = get_object_or_404(Group, name=group_name)
     user.groups.remove(manager_group)
+
+
+class CategoryView(generics.ListCreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def post(self, request, *args, **kwargs):
+        # Only allow request from managers.
+        if not is_manager(self.request.user):
+            return Response(
+                {"message": "You are not authorized"}, status=status.HTTP_403_FORBIDDEN
+            )
+        return super().post(request, *args, **kwargs)
 
 
 class MenuItemsView(generics.ListCreateAPIView):

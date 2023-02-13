@@ -5,6 +5,7 @@ from . import views
 app_name = "LittleLemonAPI"
 urlpatterns = [
     # Menu-items endpoints.
+    path("categories", views.CategoryView.as_view()),
     path("menu-items", views.MenuItemsView.as_view()),
     path("menu-items/<int:pk>", views.SingleMenuItemView.as_view()),
     # User role management endpoints.

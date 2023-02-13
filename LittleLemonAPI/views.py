@@ -363,8 +363,8 @@ class SingleOrderView(
         post_data_date = self.request.POST.get("date")
 
         # Get specified user and delivery crew.
-        updated_user = get_object_or_404(User, username=post_data_user)
-        delivery_crew = get_object_or_404(User, username=post_data_delivery_crew)
+        updated_user = get_object_or_404(User, pk=post_data_user)
+        delivery_crew = get_object_or_404(User, pk=post_data_delivery_crew)
         # Ensure delivery crew has correct role.
         if not is_delivery_crew(delivery_crew):
             return Response(
@@ -404,12 +404,10 @@ class SingleOrderView(
 
             # Assign value if given in request data.
             if post_data_user:
-                updated_user = get_object_or_404(User, username=post_data_user)
+                updated_user = get_object_or_404(User, pk=post_data_user)
                 order.user = updated_user
             if post_data_delivery_crew:
-                delivery_crew = get_object_or_404(
-                    User, username=post_data_delivery_crew
-                )
+                delivery_crew = get_object_or_404(User, pk=post_data_delivery_crew)
                 order.delivery_crew = delivery_crew
             if post_data_status:
                 order.status = post_data_status

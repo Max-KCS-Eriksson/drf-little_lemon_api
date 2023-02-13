@@ -9,8 +9,8 @@ class Category(models.Model):
     Searchable against title field.
     """
 
-    slug = models.SlugField()
-    title = models.CharField(max_length=225, db_index=True)
+    slug = models.SlugField(unique=True)
+    title = models.CharField(max_length=225, db_index=True, unique=True)
 
     class Meta:
         verbose_name_plural = "categories"

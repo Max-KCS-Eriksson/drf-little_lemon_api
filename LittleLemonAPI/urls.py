@@ -13,9 +13,10 @@ urlpatterns = [
     path("groups/manager/users/<int:pk>", views.RemoveManagerView.as_view()),
     path("groups/delivery-crew/users", views.DeliveryCrewView.as_view()),
     path("groups/delivery-crew/users/<int:pk>", views.RemoveDeliveryCrewView.as_view()),
-    # Cart management endpoints.
+    # Cart and Order management endpoints.
     path("cart/menu-items", views.CartView.as_view()),
-    # Order management endpoints.
+    path("cart/orders", views.OrdersView.as_view()),
     path("orders", views.OrdersView.as_view()),
+    path("cart/orders/<int:pk>", views.SingleOrderView.as_view()),
     path("orders/<int:pk>", views.SingleOrderView.as_view()),
 ]

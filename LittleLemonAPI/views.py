@@ -277,9 +277,13 @@ class OrdersView(generics.ListCreateAPIView):
     ]
 
     def get_queryset(self):
-        # Return all orders if user is a manager, and user created orders only if not.
+        # Return all orders to managers and assigned orders to delivery crew.
         if is_manager(self.request.user):
             return OrderItem.objects.all()
+        elif is_delivery_crew(self.request.user):
+            return OrderItem.objects.filter(order__delivery_crew=self.request.user)
+
+        # User created orders only if not manager or delivery crew.
         return OrderItem.objects.filter(order__user=self.request.user)
 
     def post(self, request, *args, **kwargs):
@@ -386,7 +390,7 @@ class SingleOrderView(
         # Get submitted data.
         post_data_user = self.request.POST.get("user")
         post_data_delivery_crew = self.request.POST.get("delivery_crew")
-        post_data_status = self.request.POST.get("status")
+        post_data_status = self.request.POST.get("status").capitalize()
         post_data_total = self.request.POST.get("total")
         post_data_date = self.request.POST.get("date")
 
